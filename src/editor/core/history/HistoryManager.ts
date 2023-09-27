@@ -1,8 +1,14 @@
-export class HistoryManager {
+import { Draw } from '../draw/Draw'
 
-  private readonly MAX_RECORD_COUNT = 1000
+export class HistoryManager {
   private undoStack: Array<Function> = []
   private redoStack: Array<Function> = []
+  private maxRecordCount: number
+
+  constructor(draw: Draw) {
+    // 忽略第一次历史记录
+    this.maxRecordCount = draw.getOptions().historyMaxRecordCount + 1
+  }
 
   public undo() {
     if (this.undoStack.length > 1) {
@@ -27,7 +33,7 @@ export class HistoryManager {
     if (this.redoStack.length) {
       this.redoStack = []
     }
-    while (this.undoStack.length > this.MAX_RECORD_COUNT) {
+    while (this.undoStack.length > this.maxRecordCount) {
       this.undoStack.shift()
     }
   }
@@ -40,4 +46,8 @@ export class HistoryManager {
     return !!this.redoStack.length
   }
 
+  public recovery() {
+    this.undoStack = []
+    this.redoStack = []
+  }
 }

@@ -3,16 +3,18 @@ import { LETTER_REG, NUMBER_LIKE_REG } from '../../../dataset/constant/Regular'
 import { CanvasEvent } from '../CanvasEvent'
 
 function dblclick(host: CanvasEvent, evt: MouseEvent) {
-  // 切换区域
   const draw = host.getDraw()
   const position = draw.getPosition()
-  const positionContext = position.getPositionByXY({
-    x: evt.offsetX,
-    y: evt.offsetY
-  })
-  if (!~positionContext.index && positionContext.zone) {
-    draw.getZone().setZone(positionContext.zone)
-    return
+  // 切换区域
+  if (draw.getIsPagingMode()) {
+    const positionContext = position.getPositionByXY({
+      x: evt.offsetX,
+      y: evt.offsetY
+    })
+    if (!~positionContext.index && positionContext.zone) {
+      draw.getZone().setZone(positionContext.zone)
+      return
+    }
   }
   // 自动扩选文字
   const cursorPosition = position.getCursorPosition()
@@ -28,7 +30,10 @@ function dblclick(host: CanvasEvent, evt: MouseEvent) {
     let upStartIndex = index - 1
     while (upStartIndex > 0) {
       const value = elementList[upStartIndex].value
-      if ((isNumber && NUMBER_LIKE_REG.test(value)) || (!isNumber && LETTER_REG.test(value))) {
+      if (
+        (isNumber && NUMBER_LIKE_REG.test(value)) ||
+        (!isNumber && LETTER_REG.test(value))
+      ) {
         upCount++
         upStartIndex--
       } else {
@@ -39,7 +44,10 @@ function dblclick(host: CanvasEvent, evt: MouseEvent) {
     let downStartIndex = index + 1
     while (downStartIndex < elementList.length) {
       const value = elementList[downStartIndex].value
-      if ((isNumber && NUMBER_LIKE_REG.test(value)) || (!isNumber && LETTER_REG.test(value))) {
+      if (
+        (isNumber && NUMBER_LIKE_REG.test(value)) ||
+        (!isNumber && LETTER_REG.test(value))
+      ) {
         downCount++
         downStartIndex++
       } else {

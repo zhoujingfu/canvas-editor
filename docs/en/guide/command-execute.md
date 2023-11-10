@@ -46,7 +46,7 @@ Feature: Paste
 Usage:
 
 ```javascript
-instance.command.executePaste()
+instance.command.executePaste(payload?: IPasteOption)
 ```
 
 ## executeSelectAll
@@ -87,6 +87,16 @@ Usage:
 
 ```javascript
 instance.command.executeForceUpdate(options?: IForceUpdateOption)
+```
+
+## executeBlur
+
+Feature: Set editor blur
+
+Usage:
+
+```javascript
+instance.command.executeBlur()
 ```
 
 ## executeUndo
@@ -426,7 +436,17 @@ Feature: Table td border type
 Usage:
 
 ```javascript
-instance.command.executeTableTdBorderType(payload: TableBorder)
+instance.command.executeTableTdBorderType(payload: TdBorder)
+```
+
+## executeTableTdSlashType
+
+Feature: Table td slash type
+
+Usage:
+
+```javascript
+instance.command.executeTableTdSlashType(payload: TdSlash)
 ```
 
 ## executeTableTdBackgroundColor
@@ -821,5 +841,15 @@ Feature: Set control value
 Usage:
 
 ```javascript
-instance.command.executeSetControlValue(payload: ISetControlOption)
+instance.command.executeSetControlValue(payload: ISetControlValueOption)
+```
+
+## executeSetControlExtension
+
+Feature: Set control extension value
+
+Usage:
+
+```javascript
+instance.command.executeSetControlExtension(payload: ISetControlExtensionOption)
 ```

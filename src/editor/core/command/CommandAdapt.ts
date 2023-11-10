@@ -13,7 +13,7 @@ import { ElementType } from '../../dataset/enum/Element'
 import { ElementStyleKey } from '../../dataset/enum/ElementStyle'
 import { ListStyle, ListType } from '../../dataset/enum/List'
 import { RowFlex } from '../../dataset/enum/Row'
-import { TableBorder, TdBorder } from '../../dataset/enum/table/Table'
+import { TableBorder, TdBorder, TdSlash } from '../../dataset/enum/table/Table'
 import { TitleLevel } from '../../dataset/enum/Title'
 import { VerticalAlign } from '../../dataset/enum/VerticalAlign'
 import { ICatalog } from '../../interface/Catalog'
@@ -21,7 +21,8 @@ import { DeepRequired } from '../../interface/Common'
 import {
   IGetControlValueOption,
   IGetControlValueResult,
-  ISetControlOption
+  ISetControlExtensionOption,
+  ISetControlValueOption
 } from '../../interface/Control'
 import {
   IAppendElementListOption,
@@ -39,8 +40,9 @@ import {
   IEditorText
 } from '../../interface/Editor'
 import { IElement, IElementStyle } from '../../interface/Element'
+import { IPasteOption } from '../../interface/Event'
 import { IMargin } from '../../interface/Margin'
-import { RangeContext } from '../../interface/Range'
+import { RangeContext, RangeRect } from '../../interface/Range'
 import { IColgroup } from '../../interface/table/Colgroup'
 import { ITd } from '../../interface/table/Td'
 import { ITr } from '../../interface/table/Tr'
@@ -62,6 +64,7 @@ import { Draw } from '../draw/Draw'
 import { INavigateInfo, Search } from '../draw/interactive/Search'
 import { TableTool } from '../draw/particle/table/TableTool'
 import { CanvasEvent } from '../event/CanvasEvent'
+import { pasteByApi } from '../event/handlers/paste'
 import { HistoryManager } from '../history/HistoryManager'
 import { I18n } from '../i18n/I18n'
 import { Position } from '../position/Position'
@@ -109,13 +112,10 @@ export class CommandAdapt {
     this.canvasEvent.copy()
   }
 
-  public async paste() {
+  public paste(payload?: IPasteOption) {
     const isReadonly = this.draw.isReadonly()
     if (isReadonly) return
-    const text = await navigator.clipboard.readText()
-    if (text) {
-      this.canvasEvent.input(text)
-    }
+    pasteByApi(this.canvasEvent, payload)
   }
 
   public selectAll() {
@@ -169,6 +169,11 @@ export class CommandAdapt {
       isSubmitHistory,
       isSetCursor: false
     })
+  }
+
+  public blur() {
+    this.range.clearRange()
+    this.draw.getCursor().recoveryCursor()
   }
 
   public undo() {
@@ -360,8 +365,6 @@ export class CommandAdapt {
   public superscript() {
     const isReadonly = this.draw.isReadonly()
     if (isReadonly) return
-    const activeControl = this.control.getActiveControl()
-    if (activeControl) return
     const selection = this.range.getSelectionElementList()
     if (!selection) return
     const superscriptIndex = selection.findIndex(
@@ -391,8 +394,6 @@ export class CommandAdapt {
   public subscript() {
     const isReadonly = this.draw.isReadonly()
     if (isReadonly) return
-    const activeControl = this.control.getActiveControl()
-    if (activeControl) return
     const selection = this.range.getSelectionElementList()
     if (!selection) return
     const subscriptIndex = selection.findIndex(
@@ -1253,6 +1254,27 @@ export class CommandAdapt {
     })
   }
 
+  public tableTdSlashType(payload: TdSlash) {
+    const isReadonly = this.draw.isReadonly()
+    if (isReadonly) return
+    const rowCol = this.draw.getTableParticle().getRangeRowCol()
+    if (!rowCol) return
+    const tdList = rowCol.flat()
+    // 存在则设置单元格斜线类型，否则取消设置
+    const isSetTdSlashType = tdList.some(td => td.slashType !== payload)
+    tdList.forEach(td => {
+      if (isSetTdSlashType) {
+        td.slashType = payload
+      } else {
+        delete td.slashType
+      }
+    })
+    const { endIndex } = this.range.getRange()
+    this.draw.render({
+      curIndex: endIndex
+    })
+  }
+
   public tableTdBackgroundColor(payload: string) {
     const isReadonly = this.draw.isReadonly()
     if (isReadonly) return
@@ -1787,12 +1809,66 @@ export class CommandAdapt {
     const positionList = this.position.getPositionList()
     const startPageNo = positionList[startIndex].pageNo
     const endPageNo = positionList[endIndex].pageNo
+    // 坐标信息（相对编辑器书写区）
+    const rangeRects: RangeRect[] = []
+    const height = this.draw.getOriginalHeight()
+    const pageGap = this.draw.getOriginalPageGap()
+    const selectionPositionList = this.position.getSelectionPositionList()
+    if (selectionPositionList) {
+      // 起始信息及x坐标
+      let currentRowNo: number | null = null
+      let currentX = 0
+      let rangeRect: RangeRect | null = null
+      for (let p = 0; p < selectionPositionList.length; p++) {
+        const {
+          rowNo,
+          pageNo,
+          coordinate: { leftTop, rightTop },
+          lineHeight
+        } = selectionPositionList[p]
+        // 起始行变化追加选区信息
+        if (currentRowNo === null || currentRowNo !== rowNo) {
+          if (rangeRect) {
+            rangeRects.push(rangeRect)
+          }
+          rangeRect = {
+            x: leftTop[0],
+            y: leftTop[1] + pageNo * (height + pageGap),
+            width: rightTop[0] - leftTop[0],
+            height: lineHeight
+          }
+          currentRowNo = rowNo
+          currentX = leftTop[0]
+        } else {
+          rangeRect!.width = rightTop[0] - currentX
+        }
+        // 最后一个元素结束追加选区信息
+        if (p === selectionPositionList.length - 1 && rangeRect) {
+          rangeRects.push(rangeRect)
+        }
+      }
+    } else {
+      const positionList = this.position.getPositionList()
+      const position = positionList[endIndex]
+      const {
+        coordinate: { rightTop },
+        pageNo,
+        lineHeight
+      } = position
+      rangeRects.push({
+        x: rightTop[0],
+        y: rightTop[1] + pageNo * (height + pageGap),
+        width: 0,
+        height: lineHeight
+      })
+    }
     return deepClone({
       isCollapsed,
       startElement,
       endElement,
       startPageNo,
-      endPageNo
+      endPageNo,
+      rangeRects
     })
   }
 
@@ -1853,11 +1929,12 @@ export class CommandAdapt {
     if (!payload.length) return
     const isReadonly = this.draw.isReadonly()
     if (isReadonly) return
+    const cloneElementList = deepClone(payload)
     // 格式化上下文信息
     const { startIndex } = this.range.getRange()
     const elementList = this.draw.getElementList()
-    formatElementContext(elementList, payload, startIndex)
-    this.draw.insertElementList(payload)
+    formatElementContext(elementList, cloneElementList, startIndex)
+    this.draw.insertElementList(cloneElementList)
   }
 
   public appendElementList(
@@ -1867,7 +1944,7 @@ export class CommandAdapt {
     if (!elementList.length) return
     const isReadonly = this.draw.isReadonly()
     if (isReadonly) return
-    this.draw.appendElementList(elementList, options)
+    this.draw.appendElementList(deepClone(elementList), options)
   }
 
   public setValue(payload: Partial<IEditorData>) {
@@ -1879,10 +1956,11 @@ export class CommandAdapt {
     if (startIndex !== endIndex) return
     const elementList = this.draw.getElementList()
     const element = elementList[startIndex]
-    if (element.type !== ElementType.CONTROL) return
+    if (!element.controlId) return
     // 删除控件
     const control = this.draw.getControl()
     const newIndex = control.removeControl(startIndex)
+    if (newIndex === null) return
     // 重新渲染
     this.range.setRange(newIndex, newIndex)
     this.draw.render({
@@ -2016,9 +2094,19 @@ export class CommandAdapt {
     return this.draw.getControl().getValueByConceptId(payload)
   }
 
-  public setControlValue(payload: ISetControlOption) {
+  public setControlValue(payload: ISetControlValueOption) {
     const isReadonly = this.draw.isReadonly()
     if (isReadonly) return
     this.draw.getControl().setValueByConceptId(payload)
+  }
+
+  public setControlExtension(payload: ISetControlExtensionOption) {
+    const isReadonly = this.draw.isReadonly()
+    if (isReadonly) return
+    this.draw.getControl().setExtensionByConceptId(payload)
+  }
+
+  public getContainer(): HTMLDivElement {
+    return this.draw.getContainer()
   }
 }

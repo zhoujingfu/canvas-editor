@@ -1,3 +1,107 @@
+## [0.9.54](https://github.com/Hufe921/canvas-editor/compare/v0.9.53...v0.9.54) (2023-11-03)
+
+
+### Bug Fixes
+
+* clone payload data when call add element api #308 ([aeefca3](https://github.com/Hufe921/canvas-editor/commit/aeefca34caa86f9f52fb742e3f7555cd0364baa4)), closes [#308](https://github.com/Hufe921/canvas-editor/issues/308)
+* print error of control assistant components in table #311 ([7fb0150](https://github.com/Hufe921/canvas-editor/commit/7fb0150635f80d62c2c27d2e2c976a3f0fa1deff)), closes [#311](https://github.com/Hufe921/canvas-editor/issues/311)
+* set control value error in table #302 ([7fba458](https://github.com/Hufe921/canvas-editor/commit/7fba458d523ae06678557add90dc9d19a3cb02cb)), closes [#302](https://github.com/Hufe921/canvas-editor/issues/302)
+
+
+### Chores
+
+* update hyperlink spell ([1bde309](https://github.com/Hufe921/canvas-editor/commit/1bde309cb5bcf797416a019f1a1507fd155dbed6))
+
+
+### Features
+
+* add copy table cell content option to contextmenu #307 ([a94328f](https://github.com/Hufe921/canvas-editor/commit/a94328fa956c5164111c27773f557b9761cd775e)), closes [#307](https://github.com/Hufe921/canvas-editor/issues/307)
+* support for insert more elements into control #306 ([d2d649b](https://github.com/Hufe921/canvas-editor/commit/d2d649b01123a13962b5ba45c2982f80cc701306)), closes [#306](https://github.com/Hufe921/canvas-editor/issues/306)
+
+
+
+## [0.9.53](https://github.com/Hufe921/canvas-editor/compare/v0.9.52...v0.9.53) (2023-10-26)
+
+
+### Bug Fixes
+
+* cannot undo and redo in form mode #301 ([22c69ee](https://github.com/Hufe921/canvas-editor/commit/22c69eec728e392346de179086bd90f81486a8c9)), closes [#301](https://github.com/Hufe921/canvas-editor/issues/301)
+
+
+### Features
+
+* add control deletable rule #301 ([e5acf6e](https://github.com/Hufe921/canvas-editor/commit/e5acf6efcbb719790770978656f01d8597f6a1e8)), closes [#301](https://github.com/Hufe921/canvas-editor/issues/301)
+* add executeBlur api #262 ([d9f7d50](https://github.com/Hufe921/canvas-editor/commit/d9f7d5045f956f0c184457562d7d0cbd8bf6033d)), closes [#262](https://github.com/Hufe921/canvas-editor/issues/262)
+* add modify internal context menu interface #300 ([0891f05](https://github.com/Hufe921/canvas-editor/commit/0891f053d2279e0db816118e073be9a1e268460a)), closes [#300](https://github.com/Hufe921/canvas-editor/issues/300)
+* add override internal copy function api ([45e7eab](https://github.com/Hufe921/canvas-editor/commit/45e7eab119a303482dde317298478fdc41536294))
+* add set control extension value api #293 ([096778d](https://github.com/Hufe921/canvas-editor/commit/096778d37c8176bb70c2d7eb4534138b4af5a712)), closes [#293](https://github.com/Hufe921/canvas-editor/issues/293)
+
+
+### Performance Improvements
+
+* set select control value style #298 ([f4d7554](https://github.com/Hufe921/canvas-editor/commit/f4d75544d0a063a05a06bc5dbac74fd4d176eb5f)), closes [#298](https://github.com/Hufe921/canvas-editor/issues/298)
+
+
+
+## [0.9.52](https://github.com/Hufe921/canvas-editor/compare/v0.9.51...v0.9.52) (2023-10-12)
+
+
+### Bug Fixes
+
+* bounding rect error in getRangeContext api ([06c3a33](https://github.com/Hufe921/canvas-editor/commit/06c3a337aeb1eccf6e7182040e6db1acadc9aee9))
+* set range style when on double click ([6f2fb5d](https://github.com/Hufe921/canvas-editor/commit/6f2fb5de0971fc98a585283f5676aed4dcdae1cc))
+
+
+### Features
+
+* add extend attribute to control element #293 ([0395a72](https://github.com/Hufe921/canvas-editor/commit/0395a72fe6464a78883630abac659aafac11d723)), closes [#293](https://github.com/Hufe921/canvas-editor/issues/293)
+* add getContainer api ([c944872](https://github.com/Hufe921/canvas-editor/commit/c944872ae7ccc273508884f103ca0fe1711c5d2c))
+
+
+
+## [0.9.51](https://github.com/Hufe921/canvas-editor/compare/v0.9.50...v0.9.51) (2023-10-10)
+
+
+### Features
+
+* add bounding rect to getRangeContext api ([319da3f](https://github.com/Hufe921/canvas-editor/commit/319da3fca16da7cbfd8a4d6ec7f54079a8f0f38e))
+* add table cell slash to contextmenu ([d540195](https://github.com/Hufe921/canvas-editor/commit/d540195dfaa80da05e9d8e2dd4b28c87ab312655))
+
+
+### Performance Improvements
+
+* contextmenu boundary position ([1ce2e2f](https://github.com/Hufe921/canvas-editor/commit/1ce2e2f44f99f7e409fba38648bd76806aa7042e))
+
+
+
+## [0.9.50](https://github.com/Hufe921/canvas-editor/compare/v0.9.49...v0.9.50) (2023-09-28)
+
+
+### Bug Fixes
+
+* remove block element last line break #287 ([0e67395](https://github.com/Hufe921/canvas-editor/commit/0e6739522d022775e39520a3cb9396531a57bf17)), closes [#287](https://github.com/Hufe921/canvas-editor/issues/287)
+
+
+### Chores
+
+* update README.md ([5ad1414](https://github.com/Hufe921/canvas-editor/commit/5ad1414d82b88bccdb1779c550b75db28dfc18e7))
+
+
+### Documentation
+
+* add plugin tips ([acdd107](https://github.com/Hufe921/canvas-editor/commit/acdd1075449a38270e3fe6fd0c9eb75f21c433cb))
+* move the cursor shortcut ([33ebc59](https://github.com/Hufe921/canvas-editor/commit/33ebc59c721cffd54c14c51ed5d6174226c8a33b))
+
+
+### Features
+
+* move the cursor the entire word #281 ([b38e4ed](https://github.com/Hufe921/canvas-editor/commit/b38e4ed0ddaa020c0dcbb0336efa32cc605e281c)), closes [#281](https://github.com/Hufe921/canvas-editor/issues/281)
+* paper background color option ([46be700](https://github.com/Hufe921/canvas-editor/commit/46be70072852e6cb2c827d960734b54880fc0681))
+* support for table cell slash #290 ([4269628](https://github.com/Hufe921/canvas-editor/commit/4269628cc46e7f9fdf0a9832601b2cf07e429aec)), closes [#290](https://github.com/Hufe921/canvas-editor/issues/290)
+* typing on ios devices #286 ([8cf2b19](https://github.com/Hufe921/canvas-editor/commit/8cf2b19d3db2b48b840641c05156d1b3a0297b2b)), closes [#286](https://github.com/Hufe921/canvas-editor/issues/286)
+
+
+
 ## [0.9.49](https://github.com/Hufe921/canvas-editor/compare/v0.9.48...v0.9.49) (2023-09-16)
 
 

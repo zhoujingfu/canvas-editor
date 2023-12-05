@@ -1,3 +1,58 @@
+## [0.9.57](https://github.com/Hufe921/canvas-editor/compare/v0.9.56...v0.9.57) (2023-12-03)
+
+
+### Bug Fixes
+
+* disable focus in readonly mode #326 ([f0823d7](https://github.com/Hufe921/canvas-editor/commit/f0823d7a6b5e975b60affeea5aae626e14162dc7)), closes [#326](https://github.com/Hufe921/canvas-editor/issues/326)
+* scaling table and separator elements error #326 ([b3354ac](https://github.com/Hufe921/canvas-editor/commit/b3354ac35ff34031b3dcbeab293b69b7686afdf2)), closes [#326](https://github.com/Hufe921/canvas-editor/issues/326)
+* unable to copy elements in control #347 ([6ca1919](https://github.com/Hufe921/canvas-editor/commit/6ca1919498328d3154865469943bde06deb5e465)), closes [#347](https://github.com/Hufe921/canvas-editor/issues/347)
+* underline position of superscript and subscript elements is error #268 ([90efe10](https://github.com/Hufe921/canvas-editor/commit/90efe1020fa801c64849b68b15580aa3b505d1cf)), closes [#268](https://github.com/Hufe921/canvas-editor/issues/268)
+
+
+### Chores
+
+* upgrade cypress version ([ecd4ae9](https://github.com/Hufe921/canvas-editor/commit/ecd4ae9652a9e819bc2a02f2f735d5b5bde9bc71))
+
+
+### Features
+
+* add control disabled rule ([1455a2a](https://github.com/Hufe921/canvas-editor/commit/1455a2afb2949b7db10a3cfa30258e0f03bcbf31))
+* add range and position context api ([8acce15](https://github.com/Hufe921/canvas-editor/commit/8acce15e767aa14a80dfe88e596986f3cba9ad63))
+* add set active zone api ([6b30e3c](https://github.com/Hufe921/canvas-editor/commit/6b30e3ca9d48cb45cfe082b55dcf11c8287c36ee))
+* limit the max cursor offsetHeight #348 ([2666bc4](https://github.com/Hufe921/canvas-editor/commit/2666bc43c3e6eca26f51e6317afcb2b02805dad4)), closes [#348](https://github.com/Hufe921/canvas-editor/issues/348)
+
+
+
+## [0.9.56](https://github.com/Hufe921/canvas-editor/compare/v0.9.55...v0.9.56) (2023-11-14)
+
+
+### Bug Fixes
+
+* compute table row and col info boundary error #324 ([455b397](https://github.com/Hufe921/canvas-editor/commit/455b397fbc5de18ffe5a22bc9f9f68e23f9874eb)), closes [#324](https://github.com/Hufe921/canvas-editor/issues/324)
+* get and set control property in table #323 ([17cd6cc](https://github.com/Hufe921/canvas-editor/commit/17cd6ccd09e7c368e2ef98c0be2b8de526e8a4c3)), closes [#323](https://github.com/Hufe921/canvas-editor/issues/323)
+
+
+
+## [0.9.55](https://github.com/Hufe921/canvas-editor/compare/v0.9.54...v0.9.55) (2023-11-10)
+
+
+### Bug Fixes
+
+*  break after pasting HTML #318 ([80f6531](https://github.com/Hufe921/canvas-editor/commit/80f6531b96e22b434cd10b4441dba86c8944f99b)), closes [#318](https://github.com/Hufe921/canvas-editor/issues/318)
+* delete table row boundary error #313 ([8f8bc04](https://github.com/Hufe921/canvas-editor/commit/8f8bc046db60a7c66c3b17e61b1f9f5a5c731f58)), closes [#313](https://github.com/Hufe921/canvas-editor/issues/313)
+* reset event ability after delete element #314 ([c6483a4](https://github.com/Hufe921/canvas-editor/commit/c6483a4da68881490cc25c52cafcf96386d9a0a6)), closes [#314](https://github.com/Hufe921/canvas-editor/issues/314)
+* shrink control range boundary error #305 ([a9fc226](https://github.com/Hufe921/canvas-editor/commit/a9fc226a39c3ef78d217fe7435b4b463c5879eac)), closes [#305](https://github.com/Hufe921/canvas-editor/issues/305)
+
+
+### Features
+
+* add pageScaleChange eventbus #321 ([c697586](https://github.com/Hufe921/canvas-editor/commit/c69758686de22328ac84138ed2c2aa9a0668ed78)), closes [#321](https://github.com/Hufe921/canvas-editor/issues/321)
+* add scrollContainerSelection option #320 ([192113e](https://github.com/Hufe921/canvas-editor/commit/192113e271b02cf3e4a462343a7b3d5604b90b23)), closes [#320](https://github.com/Hufe921/canvas-editor/issues/320)
+* collapsed selection rect information ([7c32f95](https://github.com/Hufe921/canvas-editor/commit/7c32f9572f4d29fbf2f5d6d3f775c5dbe2d0ba8b))
+* support for paste richtext data in contextmenu ([8989831](https://github.com/Hufe921/canvas-editor/commit/8989831474f637fe52133abc85d1ed2dc41f6354))
+
+
+
 ## [0.9.54](https://github.com/Hufe921/canvas-editor/compare/v0.9.53...v0.9.54) (2023-11-03)
 
 

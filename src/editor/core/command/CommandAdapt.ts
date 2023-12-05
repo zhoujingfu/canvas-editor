@@ -6,6 +6,7 @@ import { ControlComponent, ImageDisplay } from '../../dataset/enum/Control'
 import {
   EditorContext,
   EditorMode,
+  EditorZone,
   PageMode,
   PaperDirection
 } from '../../dataset/enum/Editor'
@@ -42,7 +43,7 @@ import {
 import { IElement, IElementStyle } from '../../interface/Element'
 import { IPasteOption } from '../../interface/Event'
 import { IMargin } from '../../interface/Margin'
-import { RangeContext, RangeRect } from '../../interface/Range'
+import { IRange, RangeContext, RangeRect } from '../../interface/Range'
 import { IColgroup } from '../../interface/table/Colgroup'
 import { ITd } from '../../interface/table/Td'
 import { ITr } from '../../interface/table/Tr'
@@ -150,9 +151,25 @@ export class CommandAdapt {
     this.draw.render({ curIndex })
   }
 
-  public setRange(startIndex: number, endIndex: number) {
+  public setRange(
+    startIndex: number,
+    endIndex: number,
+    tableId?: string,
+    startTdIndex?: number,
+    endTdIndex?: number,
+    startTrIndex?: number,
+    endTrIndex?: number
+  ) {
     if (startIndex < 0 || endIndex < 0 || endIndex < startIndex) return
-    this.range.setRange(startIndex, endIndex)
+    this.range.setRange(
+      startIndex,
+      endIndex,
+      tableId,
+      startTdIndex,
+      endTdIndex,
+      startTrIndex,
+      endTrIndex
+    )
     const isCollapsed = startIndex === endIndex
     this.draw.render({
       curIndex: isCollapsed ? startIndex : undefined,
@@ -160,6 +177,43 @@ export class CommandAdapt {
       isSubmitHistory: false,
       isSetCursor: isCollapsed
     })
+  }
+
+  public replaceRange(range: IRange) {
+    this.setRange(
+      range.startIndex,
+      range.endIndex,
+      range.tableId,
+      range.startTdIndex,
+      range.endTdIndex,
+      range.startTrIndex,
+      range.endTrIndex
+    )
+  }
+
+  public setPositionContext(range: IRange) {
+    const { tableId, startTrIndex, startTdIndex } = range
+    const elementList = this.draw.getOriginalElementList()
+    if (tableId) {
+      const tableElementIndex = elementList.findIndex(el => el.id === tableId)
+      if (!~tableElementIndex) return
+      const tableElement = elementList[tableElementIndex]
+      const tr = tableElement.trList![startTrIndex!]
+      const td = tr.tdList[startTdIndex!]
+      this.position.setPositionContext({
+        isTable: true,
+        index: tableElementIndex,
+        trIndex: startTrIndex,
+        tdIndex: startTdIndex,
+        tdId: td.id,
+        trId: tr.id,
+        tableId
+      })
+    } else {
+      this.position.setPositionContext({
+        isTable: false
+      })
+    }
   }
 
   public forceUpdate(options?: IForceUpdateOption) {
@@ -189,8 +243,6 @@ export class CommandAdapt {
   }
 
   public painter(options: IPainterOption) {
-    const isReadonly = this.draw.isReadonly()
-    if (isReadonly) return
     const selection = this.range.getSelection()
     if (!selection) return
     const painterStyle: IElementStyle = {}
@@ -207,12 +259,16 @@ export class CommandAdapt {
   }
 
   public applyPainterStyle() {
+    const isDisabled =
+      this.draw.isReadonly() || this.control.isDisabledControl()
+    if (isDisabled) return
     this.canvasEvent.applyPainterStyle()
   }
 
   public format() {
-    const isReadonly = this.draw.isReadonly()
-    if (isReadonly) return
+    const isDisabled =
+      this.draw.isReadonly() || this.control.isDisabledControl()
+    if (isDisabled) return
     const selection = this.range.getSelectionElementList()
     if (!selection) return
     selection.forEach(el => {
@@ -227,8 +283,9 @@ export class CommandAdapt {
   }
 
   public font(payload: string) {
-    const isReadonly = this.draw.isReadonly()
-    if (isReadonly) return
+    const isDisabled =
+      this.draw.isReadonly() || this.control.isDisabledControl()
+    if (isDisabled) return
     const selection = this.range.getSelectionElementList()
     if (!selection) return
     selection.forEach(el => {
@@ -240,8 +297,9 @@ export class CommandAdapt {
   public size(payload: number) {
     const { minSize, maxSize, defaultSize } = this.options
     if (payload < minSize || payload > maxSize) return
-    const isReadonly = this.draw.isReadonly()
-    if (isReadonly) return
+    const isDisabled =
+      this.draw.isReadonly() || this.control.isDisabledControl()
+    if (isDisabled) return
     const selection = this.range.getTextLikeSelectionElementList()
     if (!selection || !selection.length) return
     let isExistUpdate = false
@@ -261,8 +319,9 @@ export class CommandAdapt {
   }
 
   public sizeAdd() {
-    const isReadonly = this.draw.isReadonly()
-    if (isReadonly) return
+    const isDisabled =
+      this.draw.isReadonly() || this.control.isDisabledControl()
+    if (isDisabled) return
     const selection = this.range.getTextLikeSelectionElementList()
     if (!selection || !selection.length) return
     const { defaultSize, maxSize } = this.options
@@ -285,8 +344,9 @@ export class CommandAdapt {
   }
 
   public sizeMinus() {
-    const isReadonly = this.draw.isReadonly()
-    if (isReadonly) return
+    const isDisabled =
+      this.draw.isReadonly() || this.control.isDisabledControl()
+    if (isDisabled) return
     const selection = this.range.getTextLikeSelectionElementList()
     if (!selection || !selection.length) return
     const { defaultSize, minSize } = this.options
@@ -309,8 +369,9 @@ export class CommandAdapt {
   }
 
   public bold() {
-    const isReadonly = this.draw.isReadonly()
-    if (isReadonly) return
+    const isDisabled =
+      this.draw.isReadonly() || this.control.isDisabledControl()
+    if (isDisabled) return
     const selection = this.range.getSelectionElementList()
     if (!selection) return
     const noBoldIndex = selection.findIndex(s => !s.bold)
@@ -321,8 +382,9 @@ export class CommandAdapt {
   }
 
   public italic() {
-    const isReadonly = this.draw.isReadonly()
-    if (isReadonly) return
+    const isDisabled =
+      this.draw.isReadonly() || this.control.isDisabledControl()
+    if (isDisabled) return
     const selection = this.range.getSelectionElementList()
     if (!selection) return
     const noItalicIndex = selection.findIndex(s => !s.italic)
@@ -333,8 +395,9 @@ export class CommandAdapt {
   }
 
   public underline() {
-    const isReadonly = this.draw.isReadonly()
-    if (isReadonly) return
+    const isDisabled =
+      this.draw.isReadonly() || this.control.isDisabledControl()
+    if (isDisabled) return
     const selection = this.range.getSelectionElementList()
     if (!selection) return
     const noUnderlineIndex = selection.findIndex(s => !s.underline)
@@ -348,8 +411,9 @@ export class CommandAdapt {
   }
 
   public strikeout() {
-    const isReadonly = this.draw.isReadonly()
-    if (isReadonly) return
+    const isDisabled =
+      this.draw.isReadonly() || this.control.isDisabledControl()
+    if (isDisabled) return
     const selection = this.range.getSelectionElementList()
     if (!selection) return
     const noStrikeoutIndex = selection.findIndex(s => !s.strikeout)
@@ -363,8 +427,9 @@ export class CommandAdapt {
   }
 
   public superscript() {
-    const isReadonly = this.draw.isReadonly()
-    if (isReadonly) return
+    const isDisabled =
+      this.draw.isReadonly() || this.control.isDisabledControl()
+    if (isDisabled) return
     const selection = this.range.getSelectionElementList()
     if (!selection) return
     const superscriptIndex = selection.findIndex(
@@ -392,8 +457,9 @@ export class CommandAdapt {
   }
 
   public subscript() {
-    const isReadonly = this.draw.isReadonly()
-    if (isReadonly) return
+    const isDisabled =
+      this.draw.isReadonly() || this.control.isDisabledControl()
+    if (isDisabled) return
     const selection = this.range.getSelectionElementList()
     if (!selection) return
     const subscriptIndex = selection.findIndex(
@@ -421,8 +487,9 @@ export class CommandAdapt {
   }
 
   public color(payload: string) {
-    const isReadonly = this.draw.isReadonly()
-    if (isReadonly) return
+    const isDisabled =
+      this.draw.isReadonly() || this.control.isDisabledControl()
+    if (isDisabled) return
     const selection = this.range.getSelectionElementList()
     if (!selection) return
     selection.forEach(el => {
@@ -435,8 +502,9 @@ export class CommandAdapt {
   }
 
   public highlight(payload: string) {
-    const isReadonly = this.draw.isReadonly()
-    if (isReadonly) return
+    const isDisabled =
+      this.draw.isReadonly() || this.control.isDisabledControl()
+    if (isDisabled) return
     const selection = this.range.getSelectionElementList()
     if (!selection) return
     selection.forEach(el => {
@@ -871,49 +939,57 @@ export class CommandAdapt {
     if (isReadonly) return
     const positionContext = this.position.getPositionContext()
     if (!positionContext.isTable) return
-    const { index, trIndex } = positionContext
+    const { index, trIndex, tdIndex } = positionContext
     const originalElementList = this.draw.getOriginalElementList()
     const element = originalElementList[index!]
-    const curTrList = element.trList!
-    const curTr = curTrList[trIndex!]
+    const trList = element.trList!
+    const curTr = trList[trIndex!]
+    const curTdRowIndex = curTr.tdList[tdIndex!].rowIndex!
     // 如果是最后一行，直接删除整个表格
-    if (curTrList.length <= 1) {
+    if (trList.length <= 1) {
       this.deleteTable()
       return
+    }
+    // 之前行缩小rowspan
+    for (let r = 0; r < curTdRowIndex; r++) {
+      const tr = trList[r]
+      const tdList = tr.tdList
+      for (let d = 0; d < tdList.length; d++) {
+        const td = tdList[d]
+        if (td.rowIndex! + td.rowspan > curTdRowIndex) {
+          td.rowspan--
+        }
+      }
     }
     // 补跨行
     for (let d = 0; d < curTr.tdList.length; d++) {
       const td = curTr.tdList[d]
       if (td.rowspan > 1) {
-        let start = trIndex! + 1
-        while (start < trIndex! + td.rowspan) {
-          const tdId = getUUID()
-          const tr = curTrList[start]
-          tr.tdList.splice(d, 0, {
-            id: tdId,
-            rowspan: 1,
-            colspan: 1,
-            value: [
-              {
-                value: ZERO,
-                size: 16,
-                tableId: element.id,
-                trId: tr.id,
-                tdId
-              }
-            ]
-          })
-          start += 1
-        }
+        const tdId = getUUID()
+        const nextTr = trList[trIndex! + 1]
+        nextTr.tdList.splice(d, 0, {
+          id: tdId,
+          rowspan: td.rowspan - 1,
+          colspan: td.colspan,
+          value: [
+            {
+              value: ZERO,
+              size: 16,
+              tableId: element.id,
+              trId: nextTr.id,
+              tdId
+            }
+          ]
+        })
       }
     }
     // 删除当前行
-    curTrList.splice(trIndex!, 1)
+    trList.splice(trIndex!, 1)
     // 重新设置上下文
     this.position.setPositionContext({
       isTable: false
     })
-    this.range.setRange(0, 0)
+    this.range.clearRange()
     // 重新渲染
     this.draw.render({
       curIndex: positionContext.index
@@ -1386,6 +1462,8 @@ export class CommandAdapt {
   }
 
   public deleteHyperlink() {
+    const isReadonly = this.draw.isReadonly()
+    if (isReadonly) return
     // 获取超链接索引
     const hyperRange = this.getHyperlinkRange()
     if (!hyperRange) return
@@ -1407,6 +1485,8 @@ export class CommandAdapt {
   }
 
   public cancelHyperlink() {
+    const isReadonly = this.draw.isReadonly()
+    if (isReadonly) return
     // 获取超链接索引
     const hyperRange = this.getHyperlinkRange()
     if (!hyperRange) return
@@ -1430,6 +1510,8 @@ export class CommandAdapt {
   }
 
   public editHyperlink(payload: string) {
+    const isReadonly = this.draw.isReadonly()
+    if (isReadonly) return
     // 获取超链接索引
     const hyperRange = this.getHyperlinkRange()
     if (!hyperRange) return
@@ -1534,8 +1616,9 @@ export class CommandAdapt {
   }
 
   public image(payload: IDrawImagePayload) {
-    const isReadonly = this.draw.isReadonly()
-    if (isReadonly) return
+    const isDisabled =
+      this.draw.isReadonly() || this.control.isDisabledControl()
+    if (isDisabled) return
     const activeControl = this.control.getActiveControl()
     if (activeControl) return
     const { startIndex, endIndex } = this.range.getRange()
@@ -1882,6 +1965,10 @@ export class CommandAdapt {
     return paragraphElementList ? zipElementList(paragraphElementList) : null
   }
 
+  public getKeywordRangeList(payload: string): IRange[] {
+    return this.range.getKeywordRangeList(payload)
+  }
+
   public pageMode(payload: PageMode) {
     this.draw.setPageMode(payload)
   }
@@ -2086,6 +2173,10 @@ export class CommandAdapt {
       isCompute: false,
       isSubmitHistory: false
     })
+  }
+
+  public setZone(zone: EditorZone) {
+    this.draw.getZone().setZone(zone)
   }
 
   public getControlValue(

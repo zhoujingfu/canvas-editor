@@ -6,6 +6,7 @@ import {
   IControlInitOption,
   IControlInstance,
   IControlOption,
+  IControlRuleOption,
   IGetControlValueOption,
   IGetControlValueResult,
   ISetControlExtensionOption,
@@ -122,6 +123,10 @@ export class Control {
     return false
   }
 
+  public isDisabledControl(): boolean {
+    return !!this.activeControl?.getElement().control?.disabled
+  }
+
   public getContainer(): HTMLDivElement {
     return this.draw.getContainer()
   }
@@ -226,11 +231,18 @@ export class Control {
     }
   }
 
-  public repaintControl(curIndex: number) {
-    this.range.setRange(curIndex, curIndex)
-    this.draw.render({
-      curIndex
-    })
+  public repaintControl(curIndex?: number) {
+    if (curIndex === undefined) {
+      this.range.clearRange()
+      this.draw.render({
+        isSetCursor: false
+      })
+    } else {
+      this.range.setRange(curIndex, curIndex)
+      this.draw.render({
+        curIndex
+      })
+    }
   }
 
   public moveCursor(position: IControlInitOption): IMoveCursorResult {
@@ -419,54 +431,71 @@ export class Control {
     payload: IGetControlValueOption
   ): IGetControlValueResult {
     const { conceptId } = payload
+    const result: IGetControlValueResult = []
+    const getValue = (elementList: IElement[]) => {
+      let i = 0
+      while (i < elementList.length) {
+        const element = elementList[i]
+        i++
+        // 表格下钻处理
+        if (element.type === ElementType.TABLE) {
+          const trList = element.trList!
+          for (let r = 0; r < trList.length; r++) {
+            const tr = trList[r]
+            for (let d = 0; d < tr.tdList.length; d++) {
+              const td = tr.tdList[d]
+              getValue(td.value)
+            }
+          }
+        }
+        if (element?.control?.conceptId !== conceptId) continue
+        const { type, code, valueSets } = element.control!
+        let j = i
+        let textControlValue = ''
+        while (j < elementList.length) {
+          const nextElement = elementList[j]
+          if (nextElement.controlId !== element.controlId) break
+          if (
+            type === ControlType.TEXT &&
+            nextElement.controlComponent === ControlComponent.VALUE
+          ) {
+            textControlValue += nextElement.value
+          }
+          j++
+        }
+        if (type === ControlType.TEXT) {
+          result.push({
+            ...element.control,
+            value: textControlValue || null,
+            innerText: textControlValue || null
+          })
+        } else if (
+          type === ControlType.SELECT ||
+          type === ControlType.CHECKBOX
+        ) {
+          const innerText = code
+            ?.split(',')
+            .map(
+              selectCode =>
+                valueSets?.find(valueSet => valueSet.code === selectCode)?.value
+            )
+            .filter(Boolean)
+            .join('')
+          result.push({
+            ...element.control,
+            value: code || null,
+            innerText: innerText || null
+          })
+        }
+        i = j
+      }
+    }
     const elementList = [
       ...this.draw.getHeaderElementList(),
       ...this.draw.getOriginalMainElementList(),
       ...this.draw.getFooterElementList()
     ]
-    const result: IGetControlValueResult = []
-    let i = 0
-    while (i < elementList.length) {
-      const element = elementList[i]
-      i++
-      if (element?.control?.conceptId !== conceptId) continue
-      const { type, code, valueSets } = element.control!
-      let j = i
-      let textControlValue = ''
-      while (j < elementList.length) {
-        const nextElement = elementList[j]
-        if (nextElement.controlId !== element.controlId) break
-        if (
-          type === ControlType.TEXT &&
-          nextElement.controlComponent === ControlComponent.VALUE
-        ) {
-          textControlValue += nextElement.value
-        }
-        j++
-      }
-      if (type === ControlType.TEXT) {
-        result.push({
-          ...element.control,
-          value: textControlValue || null,
-          innerText: textControlValue || null
-        })
-      } else if (type === ControlType.SELECT || type === ControlType.CHECKBOX) {
-        const innerText = code
-          ?.split(',')
-          .map(
-            selectCode =>
-              valueSets?.find(valueSet => valueSet.code === selectCode)?.value
-          )
-          .filter(Boolean)
-          .join('')
-        result.push({
-          ...element.control,
-          value: code || null,
-          innerText: innerText || null
-        })
-      }
-      i = j
-    }
+    getValue(elementList)
     return result
   }
 
@@ -511,6 +540,9 @@ export class Control {
           range: fakeRange,
           elementList
         }
+        const controlRule: IControlRuleOption = {
+          isIgnoreDisabledRule: true
+        }
         if (type === ControlType.TEXT) {
           const formatValue = [{ value }]
           formatElementList(formatValue, {
@@ -519,31 +551,21 @@ export class Control {
           })
           const text = new TextControl(element, this)
           if (value) {
-            text.setValue(formatValue, controlContext)
+            text.setValue(formatValue, controlContext, controlRule)
           } else {
-            text.clearValue(controlContext)
+            text.clearValue(controlContext, controlRule)
           }
         } else if (type === ControlType.SELECT) {
           const select = new SelectControl(element, this)
           if (value) {
-            select.setSelect(value, controlContext)
+            select.setSelect(value, controlContext, controlRule)
           } else {
-            select.clearSelect(controlContext)
+            select.clearSelect(controlContext, controlRule)
           }
         } else if (type === ControlType.CHECKBOX) {
           const checkbox = new CheckboxControl(element, this)
-          const checkboxElementList = elementList.slice(
-            fakeRange.startIndex + 1,
-            fakeRange.endIndex + 1
-          )
           const codes = value?.split(',') || []
-          for (const checkElement of checkboxElementList) {
-            if (checkElement.controlComponent === ControlComponent.CHECKBOX) {
-              const checkboxItem = checkElement.checkbox!
-              checkboxItem.value = codes.includes(checkboxItem.code!)
-            }
-          }
-          checkbox.setSelect(controlContext)
+          checkbox.setSelect(codes, controlContext, controlRule)
         }
         // 修改后控件结束索引
         let newEndIndex = i
@@ -575,16 +597,22 @@ export class Control {
     const isReadonly = this.draw.isReadonly()
     if (isReadonly) return
     const { conceptId, extension } = payload
-    const data = [
-      this.draw.getHeaderElementList(),
-      this.draw.getOriginalMainElementList(),
-      this.draw.getFooterElementList()
-    ]
-    for (const elementList of data) {
+    const setExtension = (elementList: IElement[]) => {
       let i = 0
       while (i < elementList.length) {
         const element = elementList[i]
         i++
+        // 表格下钻处理
+        if (element.type === ElementType.TABLE) {
+          const trList = element.trList!
+          for (let r = 0; r < trList.length; r++) {
+            const tr = trList[r]
+            for (let d = 0; d < tr.tdList.length; d++) {
+              const td = tr.tdList[d]
+              setExtension(td.value)
+            }
+          }
+        }
         if (element?.control?.conceptId !== conceptId) continue
         element.control.extension = extension
         // 修改后控件结束索引
@@ -596,6 +624,14 @@ export class Control {
         }
         i = newEndIndex
       }
+    }
+    const data = [
+      this.draw.getHeaderElementList(),
+      this.draw.getOriginalMainElementList(),
+      this.draw.getFooterElementList()
+    ]
+    for (const elementList of data) {
+      setExtension(elementList)
     }
   }
 }

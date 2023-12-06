@@ -1414,7 +1414,7 @@ export class Draw {
         if (
           curRow.startIndex === 0 &&
           curRow.elementList.length === 1 &&
-          (INLINE_ELEMENT_TYPE.includes(element.type!) || element.listId)
+          INLINE_ELEMENT_TYPE.includes(element.type!)
         ) {
           curRow.height = defaultBasicRowMarginHeight
         }
@@ -1825,7 +1825,7 @@ export class Draw {
       this.waterMark.render(ctx)
     }
     // 绘制空白占位符
-    if (this.elementList.length <= 1) {
+    if (this.elementList.length <= 1 && !this.elementList[0]?.listId) {
       this.placeholder.render(ctx)
     }
   }

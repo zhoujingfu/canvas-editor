@@ -559,34 +559,7 @@ export class CommandAdapt {
   public list(listType: ListType | null, listStyle?: ListStyle) {
     const isReadonly = this.draw.isReadonly()
     if (isReadonly) return
-    const { startIndex, endIndex } = this.range.getRange()
-    if (!~startIndex && !~endIndex) return
-    // 需要改变的元素列表
-    const changeElementList = this.range.getRangeParagraphElementList()
-    if (!changeElementList || !changeElementList.length) return
-    // 如果包含列表则设置为取消列表
-    const isUnsetList = changeElementList.find(
-      el => el.listType === listType && el.listStyle === listStyle
-    )
-    // 设置值
-    const listId = getUUID()
-    changeElementList.forEach(el => {
-      if (!isUnsetList && listType) {
-        el.listId = listId
-        el.listType = listType
-        el.listStyle = listStyle
-      } else {
-        if (el.listId) {
-          delete el.listId
-          delete el.listType
-          delete el.listStyle
-        }
-      }
-    })
-    // 光标定位
-    const isSetCursor = startIndex === endIndex
-    const curIndex = isSetCursor ? endIndex : startIndex
-    this.draw.render({ curIndex, isSetCursor })
+    this.draw.getListParticle().setList(listType, listStyle)
   }
 
   public rowFlex(payload: RowFlex) {
@@ -1946,13 +1919,16 @@ export class CommandAdapt {
         height: lineHeight
       })
     }
+    // 区域信息
+    const zone = this.draw.getZone().getZone()
     return deepClone({
       isCollapsed,
       startElement,
       endElement,
       startPageNo,
       endPageNo,
-      rangeRects
+      rangeRects,
+      zone
     })
   }
 

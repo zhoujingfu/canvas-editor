@@ -59,8 +59,6 @@ export class Previewer {
     this.mousedownX = 0
     this.mousedownY = 0
     this.curHandleIndex = 0 // 默认右下角
-    // 图片预览
-    resizerSelection.ondblclick = this._dblclick.bind(this)
     this.previewerContainer = null
     this.previewerImage = null
   }
@@ -179,15 +177,31 @@ export class Previewer {
     let dy = 0
     switch (this.curHandleIndex) {
       case 0:
-        dx = this.mousedownX - evt.x
-        dy = this.mousedownY - evt.y
+        {
+          const offsetX = this.mousedownX - evt.x
+          const offsetY = this.mousedownY - evt.y
+          dx = Math.cbrt(offsetX ** 3 + offsetY ** 3)
+          dy = (this.curElement.height! * dx) / this.curElement.width!
+        }
         break
       case 1:
         dy = this.mousedownY - evt.y
         break
       case 2:
-        dx = evt.x - this.mousedownX
-        dy = this.mousedownY - evt.y
+        {
+          const offsetX = evt.x - this.mousedownX
+          const offsetY = this.mousedownY - evt.y
+          dx = Math.cbrt(offsetX ** 3 + offsetY ** 3)
+          dy = (this.curElement.height! * dx) / this.curElement.width!
+        }
+        break
+      case 4:
+        {
+          const offsetX = evt.x - this.mousedownX
+          const offsetY = evt.y - this.mousedownY
+          dx = Math.cbrt(offsetX ** 3 + offsetY ** 3)
+          dy = (this.curElement.height! * dx) / this.curElement.width!
+        }
         break
       case 3:
         dx = evt.x - this.mousedownX
@@ -196,15 +210,15 @@ export class Previewer {
         dy = evt.y - this.mousedownY
         break
       case 6:
-        dx = this.mousedownX - evt.x
-        dy = evt.y - this.mousedownY
+        {
+          const offsetX = this.mousedownX - evt.x
+          const offsetY = evt.y - this.mousedownY
+          dx = Math.cbrt(offsetX ** 3 + offsetY ** 3)
+          dy = (this.curElement.height! * dx) / this.curElement.width!
+        }
         break
       case 7:
         dx = this.mousedownX - evt.x
-        break
-      default:
-        dx = evt.x - this.mousedownX
-        dy = evt.y - this.mousedownY
         break
     }
     // 图片实际宽高（变化大小除掉缩放比例）
@@ -224,11 +238,6 @@ export class Previewer {
     // 尺寸预览
     this._updateResizerSizeView(elementWidth, elementHeight)
     evt.preventDefault()
-  }
-
-  private _dblclick() {
-    this._drawPreviewer()
-    document.body.style.overflow = 'hidden'
   }
 
   private _drawPreviewer() {
@@ -380,6 +389,11 @@ export class Previewer {
 
   public _updateResizerSizeView(width: number, height: number) {
     this.resizerSize.innerText = `${Math.round(width)} × ${Math.round(height)}`
+  }
+
+  public render() {
+    this._drawPreviewer()
+    document.body.style.overflow = 'hidden'
   }
 
   public drawResizer(

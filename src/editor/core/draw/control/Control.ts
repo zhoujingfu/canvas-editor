@@ -13,9 +13,10 @@ import {
   IGetControlValueOption,
   IGetControlValueResult,
   ISetControlExtensionOption,
+  ISetControlProperties,
   ISetControlValueOption
 } from '../../../interface/Control'
-import { IEditorOption } from '../../../interface/Editor'
+import { IEditorData, IEditorOption } from '../../../interface/Editor'
 import { IElement, IElementPosition } from '../../../interface/Element'
 import { EventBusMap } from '../../../interface/EventBus'
 import { IRange } from '../../../interface/Range'
@@ -97,8 +98,15 @@ export class Control {
           }
         }
       }
-      if (!element.controlId || element.control?.minWidth) {
-        return true
+      if (!element.controlId) return true
+      if (element.control?.minWidth) {
+        if (
+          element.controlComponent === ControlComponent.PREFIX ||
+          element.controlComponent === ControlComponent.POSTFIX
+        ) {
+          element.value = ''
+          return true
+        }
       }
       return (
         element.controlComponent !== ControlComponent.PREFIX &&
@@ -149,6 +157,26 @@ export class Control {
       return true
     }
     return false
+  }
+
+  // 判断是否在控件可输入的地方
+  public isRangeCanInput(): boolean {
+    const { startIndex, endIndex } = this.getRange()
+    if (!~startIndex && !~endIndex) return false
+    if (startIndex === endIndex) return true
+    const elementList = this.getElementList()
+    const startElement = elementList[startIndex]
+    const endElement = elementList[endIndex]
+    // 选区前后不是控件 || 选区前不在控件内&&选区后是后缀 || 选区前是控件&&选区后在控件内
+    return (
+      (!startElement.controlId && !endElement.controlId) ||
+      ((!startElement.controlId ||
+        startElement.controlComponent === ControlComponent.POSTFIX) &&
+        endElement.controlComponent === ControlComponent.POSTFIX) ||
+      (!!startElement.controlId &&
+        endElement.controlId === startElement.controlId &&
+        endElement.controlComponent !== ControlComponent.POSTFIX)
+    )
   }
 
   public isDisabledControl(): boolean {
@@ -674,5 +702,54 @@ export class Control {
     for (const elementList of data) {
       setExtension(elementList)
     }
+  }
+
+  public setPropertiesByConceptId(payload: ISetControlProperties) {
+    const isReadonly = this.draw.isReadonly()
+    if (isReadonly) return
+    const { conceptId, properties } = payload
+    let isExistUpdate = false
+    const pageComponentData: IEditorData = {
+      header: this.draw.getHeaderElementList(),
+      main: this.draw.getOriginalMainElementList(),
+      footer: this.draw.getFooterElementList()
+    }
+    for (const key in pageComponentData) {
+      const elementList = pageComponentData[<keyof IEditorData>key]!
+      let i = 0
+      while (i < elementList.length) {
+        const element = elementList[i]
+        i++
+        if (element?.control?.conceptId !== conceptId) continue
+        isExistUpdate = true
+        element.control = {
+          ...element.control,
+          ...properties,
+          value: element.control.value
+        }
+        // 修改后控件结束索引
+        let newEndIndex = i
+        while (newEndIndex < elementList.length) {
+          const nextElement = elementList[newEndIndex]
+          if (nextElement.controlId !== element.controlId) break
+          newEndIndex++
+        }
+        i = newEndIndex
+      }
+    }
+    if (!isExistUpdate) return
+    // 强制更新
+    for (const key in pageComponentData) {
+      const pageComponentKey = <keyof IEditorData>key
+      const elementList = zipElementList(pageComponentData[pageComponentKey]!)
+      pageComponentData[pageComponentKey] = elementList
+      formatElementList(elementList, {
+        editorOptions: this.options
+      })
+    }
+    this.draw.setEditorData(pageComponentData)
+    this.draw.render({
+      isSetCursor: false
+    })
   }
 }

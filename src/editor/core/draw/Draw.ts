@@ -551,9 +551,8 @@ export class Draw {
 
   public insertElementList(payload: IElement[]) {
     if (!payload.length) return
-    const isPartRangeInControlOutside =
-      this.control.isPartRangeInControlOutside()
-    if (isPartRangeInControlOutside) return
+    const isRangeCanInput = this.control.isRangeCanInput()
+    if (!isRangeCanInput) return
     const { startIndex, endIndex } = this.range.getRange()
     if (!~startIndex && !~endIndex) return
     formatElementList(payload, {
@@ -562,7 +561,12 @@ export class Draw {
     })
     let curIndex = -1
     // 判断是否在控件内
-    const activeControl = this.control.getActiveControl()
+    let activeControl = this.control.getActiveControl()
+    // 光标在控件内如果当前没有被激活，需要手动激活
+    if (!activeControl && this.control.isRangeWithinControl()) {
+      this.control.initControl()
+      activeControl = this.control.getActiveControl()
+    }
     if (activeControl && !this.control.isRangInPostfix()) {
       curIndex = activeControl.setValue(payload, undefined, {
         isIgnoreDisabledRule: true
@@ -839,9 +843,11 @@ export class Draw {
       p.style.marginBottom = `${this.getPageGap()}px`
       this._initPageContext(this.ctxList[i])
     })
+    const cursorPosition = this.position.getCursorPosition()
     this.render({
       isSubmitHistory: false,
-      isSetCursor: false
+      isSetCursor: !!cursorPosition,
+      curIndex: cursorPosition?.index
     })
     if (this.listener.pageScaleChange) {
       this.listener.pageScaleChange(payload)
@@ -1071,7 +1077,7 @@ export class Draw {
         ascent: 0,
         elementList: [],
         startIndex: 0,
-        rowFlex: elementList?.[1]?.rowFlex
+        rowFlex: elementList?.[0]?.rowFlex || elementList?.[1]?.rowFlex
       })
     }
     // 列表位置
@@ -1112,11 +1118,12 @@ export class Draw {
             surplusWidth > 0
               ? surplusWidth
               : Math.min(elementWidth, availableWidth)
-          element.width = adaptiveWidth
-          element.height = (elementHeight * adaptiveWidth) / elementWidth
-          metrics.width = element.width
-          metrics.height = element.height
-          metrics.boundingBoxDescent = element.height
+          const adaptiveHeight = (elementHeight * adaptiveWidth) / elementWidth
+          element.width = adaptiveWidth / scale
+          element.height = adaptiveHeight / scale
+          metrics.width = adaptiveWidth
+          metrics.height = adaptiveHeight
+          metrics.boundingBoxDescent = adaptiveHeight
         } else {
           metrics.width = elementWidth
           metrics.height = elementHeight
@@ -1276,13 +1283,13 @@ export class Draw {
           }
         }
       } else if (element.type === ElementType.SEPARATOR) {
-        element.width = availableWidth
+        element.width = availableWidth / scale
         metrics.width = availableWidth
         metrics.height = defaultSize
         metrics.boundingBoxAscent = -rowMargin
         metrics.boundingBoxDescent = -rowMargin
       } else if (element.type === ElementType.PAGE_BREAK) {
-        element.width = availableWidth
+        element.width = availableWidth / scale
         metrics.width = availableWidth
         metrics.height = defaultSize
       } else if (
@@ -1290,9 +1297,9 @@ export class Draw {
         element.controlComponent === ControlComponent.CHECKBOX
       ) {
         const { width, height, gap } = this.options.checkbox
-        const elementWidth = (width + gap * 2) * scale
+        const elementWidth = width + gap * 2
         element.width = elementWidth
-        metrics.width = elementWidth
+        metrics.width = elementWidth * scale
         metrics.height = height * scale
       } else if (element.type === ElementType.TAB) {
         metrics.width = defaultTabWidth * scale
@@ -1449,7 +1456,7 @@ export class Draw {
           startIndex: i,
           elementList: [rowElement],
           ascent,
-          rowFlex: elementList[i + 1]?.rowFlex,
+          rowFlex: elementList[i]?.rowFlex || elementList[i + 1]?.rowFlex,
           isPageBreak: element.type === ElementType.PAGE_BREAK
         }
         // 控件缩进
@@ -1645,6 +1652,10 @@ export class Draw {
           this._drawRichText(ctx)
           this.blockParticle.render(pageNo, element, x, y)
         } else {
+          // 如果当前元素设置左偏移，则上一元素立即绘制
+          if (element.left) {
+            this.textParticle.complete()
+          }
           this.textParticle.record(ctx, element, x, y + offsetY)
           // 如果设置字宽、字间距需单独绘制
           if (element.width || element.letterSpacing) {
@@ -1829,7 +1840,7 @@ export class Draw {
     // 控件高亮
     this.control.renderHighlightList(ctx, pageNo)
     // 渲染元素
-    const index = rowList[0].startIndex
+    const index = rowList[0]?.startIndex
     this.drawRow(ctx, {
       elementList,
       positionList,
@@ -2051,5 +2062,16 @@ export class Draw {
     this.globalEvent.removeEvent()
     this.scrollObserver.removeEvent()
     this.selectionObserver.removeEvent()
+  }
+
+  public clearSideEffect() {
+    // 预览工具组件
+    this.getPreviewer().clearResizer()
+    // 表格工具组件
+    this.getTableTool().dispose()
+    // 超链接弹窗
+    this.getHyperlinkParticle().clearHyperlinkPopup()
+    // 日期控件
+    this.getDateParticle().clearDatePicker()
   }
 }

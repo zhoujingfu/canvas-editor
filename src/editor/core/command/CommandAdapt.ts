@@ -24,6 +24,7 @@ import {
   IGetControlValueResult,
   ISetControlExtensionOption,
   ISetControlHighlightOption,
+  ISetControlProperties,
   ISetControlValueOption
 } from '../../interface/Control'
 import {
@@ -1415,12 +1416,24 @@ export class CommandAdapt {
     if (!rowCol) return
     const tdList = rowCol.flat()
     // 存在则设置边框类型，否则取消设置
-    const isSetBorderType = tdList.some(td => td.borderType !== payload)
+    const isSetBorderType = tdList.some(td => !td.borderTypes?.includes(payload))
     tdList.forEach(td => {
+      if (!td.borderTypes) {
+        td.borderTypes = []
+      }
+      const borderTypeIndex = td.borderTypes.findIndex(type => type === payload)
       if (isSetBorderType) {
-        td.borderType = payload
+        if (!~borderTypeIndex) {
+          td.borderTypes.push(payload)
+        }
       } else {
-        delete td.borderType
+        if (~borderTypeIndex) {
+          td.borderTypes.splice(borderTypeIndex, 1)
+        }
+      }
+      // 不存在边框设置时删除字段
+      if (!td.borderTypes.length) {
+        delete td.borderTypes
       }
     })
     const { endIndex } = this.range.getRange()
@@ -1718,29 +1731,18 @@ export class CommandAdapt {
     const isDisabled =
       this.draw.isReadonly() || this.control.isDisabledControl()
     if (isDisabled) return
-    const activeControl = this.control.getActiveControl()
-    if (activeControl) return
     const { startIndex, endIndex } = this.range.getRange()
     if (!~startIndex && !~endIndex) return
-    const elementList = this.draw.getElementList()
     const { value, width, height } = payload
-    const element: IElement = {
-      value,
-      width,
-      height,
-      id: getUUID(),
-      type: ElementType.IMAGE
-    }
-    const curIndex = startIndex + 1
-    formatElementContext(elementList, [element], startIndex)
-    this.draw.spliceElementList(
-      elementList,
-      curIndex,
-      startIndex === endIndex ? 0 : endIndex - startIndex,
-      element
-    )
-    this.range.setRange(curIndex, curIndex)
-    this.draw.render({ curIndex })
+    this.draw.insertElementList([
+      {
+        value,
+        width,
+        height,
+        id: getUUID(),
+        type: ElementType.IMAGE
+      }
+    ])
   }
 
   public search(payload: string | null) {
@@ -1969,6 +1971,10 @@ export class CommandAdapt {
 
   public getWordCount(): Promise<number> {
     return this.workerManager.getWordCount()
+  }
+
+  public getRange(): IRange {
+    return deepClone(this.range.getRange())
   }
 
   public getRangeText(): string {
@@ -2297,6 +2303,12 @@ export class CommandAdapt {
     const isReadonly = this.draw.isReadonly()
     if (isReadonly) return
     this.draw.getControl().setExtensionByConceptId(payload)
+  }
+
+  public setControlProperties(payload: ISetControlProperties) {
+    const isReadonly = this.draw.isReadonly()
+    if (isReadonly) return
+    this.draw.getControl().setPropertiesByConceptId(payload)
   }
 
   public setControlHighlight(payload: ISetControlHighlightOption) {

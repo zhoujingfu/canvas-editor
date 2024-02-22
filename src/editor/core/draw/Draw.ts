@@ -1130,6 +1130,11 @@ export class Draw {
           metrics.boundingBoxDescent = elementHeight
         }
         metrics.boundingBoxAscent = 0
+        if (element.imgDisplay === ImageDisplay.FLOATDOWN) {
+          metrics.width = 0
+          metrics.height = 0
+          metrics.boundingBoxDescent = 0
+        }
       } else if (element.type === ElementType.TABLE) {
         const tdPaddingWidth = tdPadding[1] + tdPadding[3]
         const tdPaddingHeight = tdPadding[0] + tdPadding[2]

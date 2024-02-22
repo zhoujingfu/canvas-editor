@@ -7,7 +7,15 @@ import {
 } from '../../../interface/contextmenu/ContextMenu'
 import { Command } from '../../command/Command'
 const {
-  IMAGE: { CHANGE, SAVE_AS, TEXT_WRAP, TEXT_WRAP_EMBED, TEXT_WRAP_UP_DOWN }
+  IMAGE: {
+    CHANGE,
+    SAVE_AS,
+    TEXT_WRAP,
+    TEXT_WRAP_EMBED,
+    TEXT_WRAP_UP_DOWN,
+    TEXT_WRAP_FLOAT_DOWN,
+    TEXT_WRAP_FLOAT_UP
+  }
 } = INTERNAL_CONTEXT_MENU_KEY
 
 export const imageMenus: IRegisterContextMenu[] = [
@@ -84,6 +92,28 @@ export const imageMenus: IRegisterContextMenu[] = [
           command.executeChangeImageDisplay(
             context.startElement!,
             ImageDisplay.INLINE
+          )
+        }
+      },
+      {
+        key: TEXT_WRAP_FLOAT_DOWN,
+        i18nPath: 'contextmenu.image.textWrapType.floatDown',
+        when: () => true,
+        callback: (command: Command, context: IContextMenuContext) => {
+          command.executeChangeImageDisplay(
+            context.startElement!,
+            ImageDisplay.FLOATDOWN
+          )
+        }
+      },
+      {
+        key: TEXT_WRAP_FLOAT_UP,
+        i18nPath: 'contextmenu.image.textWrapType.floatUp',
+        when: () => true,
+        callback: (command: Command, context: IContextMenuContext) => {
+          command.executeChangeImageDisplay(
+            context.startElement!,
+            ImageDisplay.FLOATUP
           )
         }
       }

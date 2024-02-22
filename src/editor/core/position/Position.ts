@@ -300,13 +300,19 @@ export class Position {
         coordinate: { leftTop, rightTop, leftBottom }
       } = positionList[j]
       if (positionNo !== pageNo) continue
+
+      const x0 = leftTop[0]
+      let x1 = rightTop[0]
+      const y0 = leftTop[1]
+      let y1 = leftBottom[1]
+
+      if (elementList[j].type === ElementType.IMAGE) {
+        x1 += elementList[j].width!
+        y1 += elementList[j].height!
+      }
+
       // 命中元素
-      if (
-        leftTop[0] - left <= x &&
-        rightTop[0] >= x &&
-        leftTop[1] <= y &&
-        leftBottom[1] >= y
-      ) {
+      if (x0 - left <= x && x1 >= x && y0 <= y && y1 >= y) {
         let curPositionIndex = j
         const element = elementList[j]
         // 表格被命中

@@ -14,7 +14,9 @@ export enum ControlComponent {
 
 export enum ImageDisplay {
   INLINE = 'inline',
-  BLOCK = 'block'
+  BLOCK = 'block',
+  FLOATDOWN = 'floatDown',
+  FLOATUP = 'floatUp'
 }
 
 // 控件内容缩进方式

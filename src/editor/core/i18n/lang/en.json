@@ -21,7 +21,9 @@
       "textWrap": "Text wrap",
       "textWrapType": {
         "embed": "Embed",
-        "upDown": "Up down"
+        "upDown": "Up down",
+        "floatDown": "float down",
+        "floatUp": "float up"
       }
     },
     "table": {
